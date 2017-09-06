@@ -195,16 +195,29 @@
     <Compile Include="App_Start\Startup.Auth.cs" />
     <Compile Include="Constants\Consts.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\DashboardController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\LoginCountController.cs" />
     <Compile Include="Controllers\ManageController.cs" />
+    <Compile Include="Controllers\SystemRolesController.cs" />
+    <Compile Include="Controllers\UsersController.cs" />
+    <Compile Include="Enums\en_LoginAuditEventType.cs" />
+    <Compile Include="Enums\en_Roles.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Helpers\EnumsHelper.cs" />
     <Compile Include="Helpers\GenericHelpers.cs" />
     <Compile Include="Helpers\StringExtension.cs" />
+    <Compile Include="Models\LoginAudits.cs" />
+    <Compile Include="Models\LoginCounts.cs" />
+    <Compile Include="Repositories\_LoginAuditRepository.cs" />
+    <Compile Include="Repositories\_LoginCountRepository.cs" />
     <Compile Include="ViewModels\AccountViewModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
+    <Compile Include="ViewModels\ChangeUserRoleViewModel.cs" />
+    <Compile Include="ViewModels\LoginAuditViewModel.cs" />
+    <Compile Include="ViewModels\LoginCountViewModel.cs" />
     <Compile Include="ViewModels\ManageViewModels.cs" />
     <Compile Include="Models\Profiles.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -218,6 +231,9 @@
     <Compile Include="Services\SmsSender.cs" />
     <Compile Include="Soul\NpgsqlQueryFactory.cs" />
     <Compile Include="Startup.cs" />
+    <Compile Include="ViewModels\ProfileViewModel.cs" />
+    <Compile Include="ViewModels\RoleViewModel.cs" />
+    <Compile Include="ViewModels\UsersViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\assets\css\bootstrap.css" />
@@ -362,6 +378,25 @@
     <Content Include="Views\Manage\VerifyPhoneNumber.cshtml" />
     <Content Include="Views\Shared\Lockout.cshtml" />
     <Content Include="Views\Shared\_LoginPartial.cshtml" />
+    <Content Include="Views\Shared\_DashboardLayout.cshtml" />
+    <Content Include="Views\Dashboard\Index.cshtml" />
+    <Content Include="Views\Users\Index.cshtml" />
+    <Content Include="Views\Users\Details.cshtml" />
+    <Content Include="Views\Users\Delete.cshtml" />
+    <Content Include="Views\Users\Lock.cshtml" />
+    <Content Include="Views\Users\UnLock.cshtml" />
+    <Content Include="Views\SystemRoles\Index.cshtml" />
+    <Content Include="Views\SystemRoles\Create.cshtml" />
+    <Content Include="Views\SystemRoles\Edit.cshtml" />
+    <Content Include="Views\SystemRoles\Details.cshtml" />
+    <Content Include="Views\SystemRoles\AddNewRoleToUser.cshtml" />
+    <Content Include="Views\SystemRoles\Change.cshtml" />
+    <Content Include="Views\SystemRoles\RemoveFromRole.cshtml" />
+    <Content Include="Views\SystemRoles\Delete.cshtml" />
+    <Content Include="Views\LoginCount\Index.cshtml" />
+    <Content Include="Views\LoginCount\AuditUserLogin.cshtml" />
+    <Content Include="Views\Account\DisplayEmail.cshtml" />
+    <Content Include="Views\Account\RegisterSuperAdmin.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

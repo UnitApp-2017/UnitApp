@@ -45,5 +45,9 @@ namespace UnitApp.Models
 
             base.OnModelCreating(modelBuilder);
         }
+
+        public DbSet<Profiles> Profiles { get; set; }
+        public DbSet<LoginAudits> LoginAudits { get; set; }
+        public DbSet<LoginCounts> LoginCounts { get; set; }
     }
 }

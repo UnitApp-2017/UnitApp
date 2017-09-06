@@ -11,6 +11,11 @@ using Microsoft.Owin.Security;
 using UnitApp.Repositories;
 using UnitApp.ViewModels;
 using UnitApp.Models;
+using UnitApp.Helpers;
+using System.Web.Security;
+using UnitApp.Enums;
+using Microsoft.AspNet.Identity.EntityFramework;
+using UnitApp.Services;
 
 namespace UnitApp.Controllers
 {
@@ -20,8 +25,11 @@ namespace UnitApp.Controllers
         private ApplicationSignInManager _signInManager;
         private ApplicationUserManager _userManager;
         private _UserRoleRepository _userRoleRepository = new _UserRoleRepository();
+        private _LoginCountRepository _loginCountRepo = new _LoginCountRepository();
+        private _LoginAuditRepository _loginAuditRepository = new _LoginAuditRepository();
         private _RoleRepository _roleRepository = new _RoleRepository();
         private _ProfileRepository _profileRepository = new _ProfileRepository();
+        private EmailSender sendEmail = new EmailSender();
 
         public AccountController()
         {
@@ -80,7 +88,101 @@ namespace UnitApp.Controllers
 
             // This doesn't count login failures towards account lockout
             // To enable password failures to trigger account lockout, change to shouldLockout: true
-            var result = await SignInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, shouldLockout: false);
+            var user = await UserManager.FindByNameAsync(model.Email);
+            var password = await UserManager.CheckPasswordAsync(user, model.Password);
+            if (user != null && password == true)
+            {
+                if (!user.EmailConfirmed)
+                {
+                    ModelState.AddModelError("", "Please confirm your email address to process.");
+                    return View(model);
+                }
+                else if (user.TwoFactorEnabled)
+                {
+                    return RedirectToAction(nameof(SendCode), new { ReturnUrl = returnUrl, RememberMe = model.RememberMe });
+                }
+                else if (user.LockoutEnabled)
+                {
+                    ModelState.AddModelError("", "User account locked out.");
+                    return View("Lockout");
+                }
+                else
+                {
+                    var result = await SignInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, shouldLockout: false);
+                    switch (result)
+                    {
+                        case SignInStatus.Success:
+                            //return RedirectToLocal(returnUrl);
+                            FormsAuthentication.SetAuthCookie(user.UserName, true);
+                            _loginCountRepo.CountUserLogin(user.Id.ToString());
+                            //audit
+                            var ip = GenericHelpers.GetUserIPAddress();
+                            if(!string.IsNullOrEmpty(ip))
+                            {
+                                LoginAudits auditRecord = LoginAudits.CreateAuditEvent(Guid.NewGuid().ToString(), user.Id, en_LoginAuditEventType.Login, ip);
+                                if (auditRecord != null)
+                                {
+                                    int auditRecording = _loginAuditRepository.Insert(auditRecord);
+                                }
+                            }
+
+                            return RedirectToLocal(returnUrl, user.Id.ToString());
+                        case SignInStatus.LockedOut:
+                            if (user != null)
+                            {
+                                //audit
+                                var ip3 = GenericHelpers.GetUserIPAddress();
+                                if(!string.IsNullOrEmpty(ip3))
+                                {
+                                    LoginAudits auditRecord3 = LoginAudits.CreateAuditEvent(Guid.NewGuid().ToString(), user.Id, en_LoginAuditEventType.AccountLockedOut, ip3);
+                                    if (auditRecord3 != null)
+                                    {
+                                        int auditRecording = _loginAuditRepository.Insert(auditRecord3);
+                                    }
+                                }
+                                
+                            }
+                            return View("Lockout");
+                        case SignInStatus.RequiresVerification:
+                            return RedirectToAction("SendCode", new { ReturnUrl = returnUrl, RememberMe = model.RememberMe });
+                        case SignInStatus.Failure:
+                        default:
+                            ModelState.AddModelError("", "Invalid login attempt.");
+                            if (user != null)
+                            {
+                                //audit
+                                var ip2 = GenericHelpers.GetUserIPAddress();
+                                if(!string.IsNullOrEmpty(ip2))
+                                {
+                                    LoginAudits auditRecord2 = LoginAudits.CreateAuditEvent(Guid.NewGuid().ToString(), user.Id, en_LoginAuditEventType.FailedLogin, ip2);
+                                    if (auditRecord2 != null)
+                                    {
+                                        int auditRecording = _loginAuditRepository.Insert(auditRecord2);
+                                    }
+                                }
+                                
+                            }
+                            return View(model);
+                    }
+
+                }
+            }
+            else
+            {
+                ModelState.AddModelError("", "Invalid Email or Username.");
+                if (user != null)
+                {
+                    //audit
+                    var ip = GenericHelpers.GetUserIPAddress();
+                    LoginAudits auditRecord = LoginAudits.CreateAuditEvent(Guid.NewGuid().ToString(), user.Id, en_LoginAuditEventType.FailedLogin, ip);
+                    if (auditRecord != null)
+                    {
+                        int auditRecording = _loginAuditRepository.Insert(auditRecord);
+                    }
+                }
+                return View(model);
+            }
+            /**var result = await SignInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, shouldLockout: false);
             switch (result)
             {
                 case SignInStatus.Success:
@@ -93,7 +195,7 @@ namespace UnitApp.Controllers
                 default:
                     ModelState.AddModelError("", "Invalid login attempt.");
                     return View(model);
-            }
+            }**/
         }
 
         //
@@ -156,19 +258,106 @@ namespace UnitApp.Controllers
         {
             if (ModelState.IsValid)
             {
+                string roleName = en_Roles.User.ToString();
                 var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
                 var result = await UserManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
-                    await SignInManager.SignInAsync(user, isPersistent:false, rememberBrowser:false);
-                    
-                    // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
-                    // Send an email with this link
-                    // string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
-                    // var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
-                    // await UserManager.SendEmailAsync(user.Id, "Confirm your account", "Please confirm your account by clicking <a href=\"" + callbackUrl + "\">here</a>");
+                    await UserManager.SetLockoutEnabledAsync(user.Id, false);
+                    ///send confirmation email
+                    ///now send confirmation email
+                    //MailEngine.SendMail(user.Email, "Confirm your account", "Please confirm your account by clicking this link: <a href=\"" + callbackUrl + "\">link</a>");
 
-                    return RedirectToAction("Index", "Home");
+                    var code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
+                    var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+                    
+                    await sendEmail.SendEmailAsync(model.Email, "Confirm your account", "Please confirm your account by clicking this <a href=\"" + callbackUrl + "\">link</a>");
+
+                    try
+                    {
+                        //check if role exists
+                        if (_roleRepository.GetRoleByName(roleName) == null)
+                            _roleRepository.Insert(new IdentityRole(roleName));
+                        result = UserManager.AddToRole(user.Id, roleName); //add user role
+                        //insert into Profile
+                        Profiles profile = new Profiles();
+                        profile.Id = Guid.NewGuid();
+                        profile.UserId = Guid.Parse(user.Id);
+                        profile.FirstName = model.FirstName;
+                        profile.LastName = model.LastName;
+                        profile.Activated = true;
+                        _profileRepository.Insert(profile);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new InvalidOperationException(ex.Message);
+                    }
+                    ViewBag.Link = callbackUrl;
+                    return View("DisplayEmail");
+                }
+                AddErrors(result);
+            }
+
+            // If we got this far, something failed, redisplay form
+            return View(model);
+        }
+
+        // GET: /Account/RegisterSuperAdmin
+        [HttpGet]
+        [AllowAnonymous]
+        public ActionResult RegisterSuperAdmin(string returnUrl = null)
+        {
+            ViewData["ReturnUrl"] = returnUrl;
+            return View();
+        }
+
+        // POST: /Account/RegisterSuperAdmin
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> RegisterSuperAdmin(RegisterViewModel model, string returnUrl = null)
+        {
+            if (ModelState.IsValid)
+            {
+                string roleName = en_Roles.SuperAdmin.ToString();
+                var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+                var result = await UserManager.CreateAsync(user, model.Password);
+                if (result.Succeeded)
+                {
+                    await UserManager.SetLockoutEnabledAsync(user.Id, false);
+                    ///send confirmation email
+                    ///now send confirmation email
+                    //MailEngine.SendMail(user.Email, "Confirm your account", "Please confirm your account by clicking this link: <a href=\"" + callbackUrl + "\">link</a>");
+
+                    var code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
+                    var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+                    
+                    await sendEmail.SendEmailAsync(model.Email, "Confirm your account", "Please confirm your account by clicking this <a href=\"" + callbackUrl + "\">link</a>");
+
+                    try
+                    {
+                        //check if role exists
+                        if (_roleRepository.GetRoleByName(roleName) == null)
+                            _roleRepository.Insert(new IdentityRole(roleName));
+                        result = UserManager.AddToRole(user.Id, roleName); //add user role
+
+                        //insert into Profile
+                        Profiles profile = new Profiles();
+                        profile.Id = Guid.NewGuid();
+                        profile.UserId = Guid.Parse(user.Id);
+                        profile.FirstName = model.FirstName;
+                        profile.LastName = model.LastName;
+                        profile.Activated = true;
+                        _profileRepository.Insert(profile);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new InvalidOperationException(ex.Message);
+                    }
+                    ViewBag.Link = callbackUrl;
+                    return View("DisplayEmail");
                 }
                 AddErrors(result);
             }
@@ -214,12 +403,12 @@ namespace UnitApp.Controllers
                     return View("ForgotPasswordConfirmation");
                 }
 
-                // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
-                // Send an email with this link
-                // string code = await UserManager.GeneratePasswordResetTokenAsync(user.Id);
-                // var callbackUrl = Url.Action("ResetPassword", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);		
+                string code = await UserManager.GeneratePasswordResetTokenAsync(user.Id);
+                var callbackUrl = Url.Action("ResetPassword", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+                await sendEmail.SendEmailAsync(model.Email, "Reset Password", "Please reset your password by clicking <a href=\"" + callbackUrl + "\">here</a>");
+
                 // await UserManager.SendEmailAsync(user.Id, "Reset Password", "Please reset your password by clicking <a href=\"" + callbackUrl + "\">here</a>");
-                // return RedirectToAction("ForgotPasswordConfirmation", "Account");
+                return RedirectToAction("ForgotPasswordConfirmation", "Account");
             }
 
             // If we got this far, something failed, redisplay form
@@ -285,6 +474,30 @@ namespace UnitApp.Controllers
         {
             // Request a redirect to the external login provider
             return new ChallengeResult(provider, Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl }));
+        }
+
+        private ActionResult RedirectToLocal(string returnUrl, string userid)
+        {
+            if (Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+            else
+            {
+                if (UserManager.IsInRole(userid, en_Roles.Admin.ToString()) || UserManager.IsInRole(userid, en_Roles.SuperAdmin.ToString()))
+                {
+                    return RedirectToAction(nameof(DashboardController.Index), "Dashboard");
+                }
+                else if (UserManager.IsInRole(userid, en_Roles.ClinicAdmin.ToString()))
+                {
+                    ViewBag.Role = "3";
+                    return RedirectToAction("Index", "Home");
+                }
+                else
+                {
+                    return RedirectToAction("Index", "Home");
+                }
+            }
         }
 
         //
@@ -397,6 +610,20 @@ namespace UnitApp.Controllers
         public ActionResult LogOff()
         {
             AuthenticationManager.SignOut(DefaultAuthenticationTypes.ApplicationCookie);
+            //login audit
+            string userid = HttpContext.GetOwinContext().Request.User.Identity.GetUserId();
+            if(!string.IsNullOrEmpty(userid))
+            {
+                var ip = GenericHelpers.GetUserIPAddress();
+                if(!string.IsNullOrEmpty(ip))
+                {
+                    LoginAudits auditRecord = LoginAudits.CreateAuditEvent(Guid.NewGuid().ToString(), userid, en_LoginAuditEventType.LogOut, ip);
+                    if (auditRecord != null)
+                    {
+                        int auditRecording = _loginAuditRepository.Insert(auditRecord);
+                    }
+                }
+            }
             return RedirectToAction("Index", "Home");
         }
 

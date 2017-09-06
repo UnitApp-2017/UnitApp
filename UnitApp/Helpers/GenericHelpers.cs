@@ -137,6 +137,11 @@ namespace UnitApp.Helpers
 
         }
 
+        public static string Date()
+        {
+            return DateTime.UtcNow.ToString("yyyy-MM-dd HH:MM:sss"); ////Coordinated Universal Time, which is also called the Greenwich Mean Time time zon
+        }
+
         public static string MarkLinks(this string input)
         {
             Regex reg = new Regex(@"((?:http|https):\/\/[a-z0-9\/\?=_#&%~-]+(\.[a-z0-9\/\?=_#&%~-]+)+)|(www(\.[a-z0-9\/\?=_#&%~-]+){2,})", RegexOptions.IgnoreCase);

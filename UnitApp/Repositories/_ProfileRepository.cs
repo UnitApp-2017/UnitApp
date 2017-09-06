@@ -38,7 +38,7 @@ namespace UnitApp.Repositories
         internal const string FieldDateModified = "DateModified";
         internal const string FieldActivated = "Activated";
         internal const string FieldMaritalStatusId = "MaritalStatusId";
-        internal const string FieldProfilePhotoId = "ProfilePhotoId";
+        internal const string FieldProfilePhotoId = "PhotoId";
 
         internal static string fullTableName = Consts.Schema.Quoted() + "." + TableName.Quoted();
 
@@ -67,7 +67,7 @@ namespace UnitApp.Repositories
             user.DateModified = string.IsNullOrEmpty(row[FieldDateModified]) ? DateTime.Now : DateTime.Parse(row[FieldDateModified]);
             user.MaritalStatusId = row[FieldMaritalStatusId];
             user.Activated = row[FieldActivated] == "1" ? true : false;
-            user.ProfilePhotoId = row[FieldProfilePhotoId];
+            user.PhotoId = row[FieldProfilePhotoId];
 
             return user;
 
@@ -145,7 +145,7 @@ namespace UnitApp.Repositories
                 FieldProfilePhotoId.Quoted() + ", " +
                 FieldReligionId.Quoted() + ", " +
                 FieldStateId.Quoted() + ")" +
-                " VALUES (@Id, @UserId, @Activated, @City, @Address, @CountryId, @DateCreated, @DateMarkedForDeletion, @DateModified, @DateOfBirth, @FirstName, @GenderId, @LastName, @MiddleName, @LgaId, @MaritalStatusId, @MarkedForDeletion, @PlaceOfBirth, @ProfilePhotoId, @ReligionId, @StateId);";
+                " VALUES (@Id, @UserId, @Activated, @City, @Address, @CountryId, @DateCreated, @DateMarkedForDeletion, @DateModified, @DateOfBirth, @FirstName, @GenderId, @LastName, @MiddleName, @LgaId, @MaritalStatusId, @MarkedForDeletion, @PlaceOfBirth, @PhotoId, @ReligionId, @StateId);";
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             parameters.Add("@Id", n.Id);
             parameters.Add("@UserId", n.UserId);
@@ -165,7 +165,7 @@ namespace UnitApp.Repositories
             parameters.Add("@MaritalStatusId", n.MaritalStatusId);
             parameters.Add("@MarkedForDeletion", n.MarkedForDeletion);
             parameters.Add("@PlaceOfBirth", n.PlaceOfBirth);
-            parameters.Add("@ProfilePhotoId", n.ProfilePhotoId);
+            parameters.Add("@PhotoId", n.PhotoId);
             parameters.Add("@ReligionId", n.ReligionId);
             parameters.Add("@StateId", n.StateId);
 
@@ -191,7 +191,7 @@ namespace UnitApp.Repositories
                 FieldMaritalStatusId.Quoted() + " = @MaritalStatusId, " +
                 FieldMarkedForDeletion.Quoted() + " = @MarkedForDeletion, " +
                 FieldPlaceOfBirth.Quoted() + " = @PlaceOfBirth, " +
-                FieldProfilePhotoId.Quoted() + " = @ProfilePhotoId, " +
+                FieldProfilePhotoId.Quoted() + " = @PhotoId, " +
                 FieldReligionId.Quoted() + " = @ReligionId, " +
                 FieldStateId.Quoted() + " = @StateId " +
                 " where " + FieldUserId.Quoted() + " = @UserId";
@@ -215,7 +215,7 @@ namespace UnitApp.Repositories
             parameters.Add("@MaritalStatusId", n.MaritalStatusId);
             parameters.Add("@MarkedForDeletion", n.MarkedForDeletion);
             parameters.Add("@PlaceOfBirth", n.PlaceOfBirth);
-            parameters.Add("@ProfilePhotoId", n.ProfilePhotoId);
+            parameters.Add("@PhotoId", n.PhotoId);
             parameters.Add("@ReligionId", n.ReligionId);
             parameters.Add("@StateId", n.StateId);
 

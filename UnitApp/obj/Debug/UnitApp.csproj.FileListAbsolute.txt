@@ -82,3 +82,4 @@ C:\ProjectWork\Web\UnitApp\UnitApp\bin\MimeKit.dll
 C:\ProjectWork\Web\UnitApp\UnitApp\bin\MimeKit.xml
 C:\ProjectWork\Web\UnitApp\UnitApp\bin\MailKit.dll
 C:\ProjectWork\Web\UnitApp\UnitApp\bin\MailKit.xml
+C:\ProjectWork\Web\UnitApp\UnitApp\obj\Debug\UnitApp.csprojResolveAssemblyReference.cache

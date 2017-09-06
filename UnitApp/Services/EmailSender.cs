@@ -12,6 +12,9 @@ namespace UnitApp.Services
 {
     public class EmailSender : IEmailSender
     {
+        public EmailSender()
+        {}
+
         public async Task SendEmailAsync(string email, string subject, string message)
         {
 
@@ -20,8 +23,8 @@ namespace UnitApp.Services
             {
                 //return Task.FromResult(0);
                 // Credentials:
-                var sentFrom = "unit@gmail.com";
-                var pwd = "c3@@o0n4v2e5y5";
+                var sentFrom = "appinfo101@gmail.com";
+                var pwd = "tonyoneweek";
                 var emailMessage = new MimeMessage();
 
                 emailMessage.From.Add(new MailboxAddress("UnitApp", sentFrom));
@@ -30,7 +33,7 @@ namespace UnitApp.Services
 
                 var builder = new BodyBuilder();
                 string webPath = HostingEnvironment.ApplicationPhysicalPath; //_env.WebRootPath;
-                var image = builder.LinkedResources.Add(webPath + @"Content\images\unit_logo.png");
+                var image = builder.LinkedResources.Add(webPath + @"Content\assets\img\logo.png");
                 image.ContentId = MimeUtils.GenerateMessageId();
                 builder.HtmlBody = string.Format(@"<left><img src=""cid:{0}""></left><br><p>{1}</p>", image.ContentId, message);
 

@@ -90,6 +90,30 @@ CREATE TABLE "Profiles" (
 )
 WITH (OIDS=FALSE);
 
+-- ----------------------------
+-- Table structure for LoginCounts
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."LoginCounts";
+CREATE TABLE "public"."LoginCounts" (
+"UserId" varchar COLLATE "default" NOT NULL,
+"NumberOfTimes" int8,
+"LastLoggedInDate" timestamp(6)
+)
+WITH (OIDS=FALSE);
+
+-- ----------------------------
+-- Table structure for LoginAudits
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."LoginAudits";
+CREATE TABLE "public"."LoginAudits" (
+"UserId" varchar(150) COLLATE "default" NOT NULL,
+"Timestamp" timestamp(15) NOT NULL,
+"AuditEvent" varchar(15) COLLATE "default" NOT NULL,
+"IpAddress" varchar(15) COLLATE "default" NOT NULL,
+"AuditId" varchar(200) COLLATE "default" DEFAULT NULL::character varying NOT NULL
+)
+WITH (OIDS=FALSE);
+
 
 CREATE INDEX "IX_AspNetUserClaims_UserId"	ON "AspNetUserClaims"	("UserId");
 CREATE INDEX "IX_AspNetUserLogins_UserId"	ON "AspNetUserLogins"	("UserId");
@@ -116,3 +140,11 @@ ALTER TABLE "AspNetUserRoles"
 -- Primary Key structure for table Profiles
 -- ----------------------------
 ALTER TABLE "Profiles" ADD PRIMARY KEY ("Id");
+-- ----------------------------
+-- Primary Key structure for table LoginCounts
+-- ----------------------------
+ALTER TABLE "public"."LoginCounts" ADD PRIMARY KEY ("UserId");
+-- ----------------------------
+-- Primary Key structure for table LoginAudits
+-- ----------------------------
+ALTER TABLE "public"."LoginAudits" ADD PRIMARY KEY ("AuditId");

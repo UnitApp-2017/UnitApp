@@ -27,6 +27,6 @@ namespace UnitApp.Models
         public DateTime DateModified { get; set; }
         public bool Activated { get; set; }
         public string MaritalStatusId { get; set; }
-        public string ProfilePhotoId { get; set; }
+        public string PhotoId { get; set; }
     }
 }
